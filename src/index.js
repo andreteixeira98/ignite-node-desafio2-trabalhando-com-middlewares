@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 
-const { v4: uuidv4, validate } = require('uuid');
+const { v4: uuidv4, validate: isValidUUID} = require('uuid');
 
 const app = express();
 app.use(express.json());
@@ -10,19 +10,74 @@ app.use(cors());
 const users = [];
 
 function checksExistsUserAccount(request, response, next) {
-  // Complete aqui
+  
+  
+  const {username} = request.headers;
+  const userAlreadyExists = users.find(user => user.username === username);
+
+  if(!userAlreadyExists){
+    return response.status(404).json({error:'user not found!'})
+  }
+  request.user = userAlreadyExists;
+  next();
 }
 
 function checksCreateTodosUserAvailability(request, response, next) {
-  // Complete aqui
+  const user = request.user;
+  if(!user.pro && user.todos.length >=10){
+    return response.status(403).json({error:"free todo limit exceeded for your plan"})
+  }
+
+  next();
 }
 
 function checksTodoExists(request, response, next) {
+  const {username} = request.headers;
+  const {id} = request.params;
+
+
+  const userAlreadyExists = users.find(user => user.username === username);
+
+
+  if(!userAlreadyExists){
+    return response.status(404).json({error:"user not found"})
+  }
+
+  if(!isValidUUID(id)){
+    return response.status(400).json({error:"is not valid uuid"})
+  }
+
+  const todoAlreadyExists = userAlreadyExists.todos.find(todo => todo.id === id);
+
+  if(!todoAlreadyExists){
+    return response.status(404).json({error:"todo not found"});
+  }
+
+  request.user = userAlreadyExists;
+  request.todo = todoAlreadyExists;
+
+  next();
+
+
+
+
+
+
+
   // Complete aqui
 }
 
 function findUserById(request, response, next) {
-  // Complete aqui
+  const {id} = request.params;
+
+  const userAlreadyExists = users.find(user => user.id === id);
+
+  if(!userAlreadyExists){
+    return response.status(404).json({error:"user not found"})
+  }
+
+  request.user = userAlreadyExists;
+  next();
 }
 
 app.post('/users', (request, response) => {
